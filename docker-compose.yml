@@ -1,0 +1,47 @@
+services:
+  lamp:
+    image: php:8.2-apache
+    container_name: wp_lamp
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./config/php/php.ini:/usr/local/etc/php/php.ini # Custom PHP settings
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.4
+    container_name: wp_mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${WORDPRESS_DB_NAME}
+      - MYSQL_USER=${WORDPRESS_DB_USER}
+      - MYSQL_PASSWORD=${WORDPRESS_DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    build:
+      context: dockerfile
+      dockerfile: dockerfile.wordpress
+    container_name: wp_wordpress
+    restart: always
+    ports:
+      - "8050:80"
+    volumes:
+      - ./config/wordpress/wp-config.php:/var/www/html/wp-config.php # Inject custom wp-config.php
+    environment:
+      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_USER=${WORDPRESS_DB_USER}
+      - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD}
+      - WORDPRESS_DB_NAME=${WORDPRESS_DB_NAME}
+    depends_on:
+      - db
+      - lamp
+        
+volumes:
+  db_data:
